@@ -84,7 +84,7 @@ namespace Lextm.SharpSnmpLib.Messaging
         /// <param name="endpoint">Endpoint.</param>
         /// <param name="community">Community name.</param>
         /// <param name="variables">Variable binds.</param>
-        /// <param name="timeout">Timeout in miliseconds</param>
+        /// <param name="timeout">The time-out value, in milliseconds. The default value is 0, which indicates an infinite time-out period.</param>
         /// <returns></returns>
         public static async Task<IList<Variable>> GetAsync(VersionCode version, IPEndPoint endpoint, OctetString community, IList<Variable> variables, int timeout = 0)
         {
@@ -129,7 +129,7 @@ namespace Lextm.SharpSnmpLib.Messaging
         /// <param name="endpoint">Endpoint.</param>
         /// <param name="community">Community name.</param>
         /// <param name="variables">Variable binds.</param>
-        /// <param name="timeout">Timeout in miliseconds</param>
+        /// <param name="timeout">The time-out value, in milliseconds. The default value is 0, which indicates an infinite time-out period.</param>
         /// <returns></returns>
         public static async Task<IList<Variable>> SetAsync(VersionCode version, IPEndPoint endpoint, OctetString community, IList<Variable> variables, int timeout = 0)
         {
@@ -228,7 +228,7 @@ namespace Lextm.SharpSnmpLib.Messaging
         /// <param name="endpoint">The endpoint.</param>
         /// <param name="community">The community.</param>
         /// <param name="seed">The seed.</param>
-        /// <param name="timeout">Timeout in miliseconds</param>
+        /// <param name="timeout">The time-out value, in milliseconds. The default value is 0, which indicates an infinite time-out period.</param>
         /// <returns>
         ///     <c>true</c> if the specified seed has next item; otherwise, <c>false</c>.
         /// </returns>
@@ -408,7 +408,7 @@ namespace Lextm.SharpSnmpLib.Messaging
         /// <param name="variables">Variable bindings.</param>
         /// <param name="privacy">The privacy provider.</param>
         /// <param name="report">The report.</param>
-        /// <param name="timeout">Timeout in miliseconds</param>
+        /// <param name="timeout">The time-out value, in milliseconds. The default value is 0, which indicates an infinite time-out period.</param>
         /// <remarks>This method supports SNMP v2c and v3.</remarks>
         [CLSCompliant(false)]
         public static async Task SendInformAsync(int requestId, VersionCode version, IPEndPoint receiver, OctetString community, OctetString contextName, ObjectIdentifier enterprise, uint timestamp, IList<Variable> variables, IPrivacyProvider privacy, ISnmpMessage report, int timeout = 0)
@@ -513,7 +513,7 @@ namespace Lextm.SharpSnmpLib.Messaging
         /// <param name="maxRepetitions">The max repetitions.</param>
         /// <param name="privacy">The privacy provider.</param>
         /// <param name="report">The report.</param>
-        /// <param name="timeout">Timeout in miliseconds</param>
+        /// <param name="timeout">The time-out value, in milliseconds. The default value is 0, which indicates an infinite time-out period.</param>
         /// <returns>
         /// <c>true</c> if the specified seed has next item; otherwise, <c>false</c>.
         /// </returns>
