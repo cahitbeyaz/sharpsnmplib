@@ -26,6 +26,12 @@
             m_eventArgs.Completed += Completed;
         }
 
+        public SocketAwaitable(SocketAsyncEventArgs eventArgs, Action continuation) : this(eventArgs)
+        {
+            m_continuation = continuation;
+        }
+
+
         public void Dispose()
         {
             Dispose(true);
@@ -62,7 +68,6 @@
         internal void Reset()
         {
             m_wasCompleted = false;
-            m_continuation = null;
         }
 
         public SocketAwaitable GetAwaiter() { return this; }

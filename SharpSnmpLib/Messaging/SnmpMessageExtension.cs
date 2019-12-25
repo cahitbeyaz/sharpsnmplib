@@ -126,7 +126,7 @@ namespace Lextm.SharpSnmpLib.Messaging
             return message.Parameters.UserName;
         }
 
-#region sync methods
+        #region sync methods
 
         /// <summary>
         /// Sends an <see cref="ISnmpMessage"/>.
@@ -378,9 +378,9 @@ namespace Lextm.SharpSnmpLib.Messaging
             throw OperationException.Create(string.Format(CultureInfo.InvariantCulture, "wrong response type: {0}", responseCode), receiver.Address);
         }
 
-#endregion
+        #endregion
 
-#region async methods
+        #region async methods
 #if NET452
         /// <summary>
         /// Ends a pending asynchronous read.
@@ -563,7 +563,7 @@ namespace Lextm.SharpSnmpLib.Messaging
         /// <param name="receiver">Port number.</param>
         /// <param name="registry">User registry.</param>
         /// <returns></returns>
-        public static async Task<ISnmpMessage> GetResponseAsync(this ISnmpMessage request, IPEndPoint receiver, UserRegistry registry)
+        public static async Task<ISnmpMessage> GetResponseAsync(this ISnmpMessage request, IPEndPoint receiver, UserRegistry registry, int timeout = 0)
         {
             // TODO: make more usage of UserRegistry.
             if (request == null)
@@ -584,7 +584,7 @@ namespace Lextm.SharpSnmpLib.Messaging
 
             using (var socket = receiver.GetSocket())
             {
-                return await request.GetResponseAsync(receiver, registry, socket).ConfigureAwait(false);
+                return await request.GetResponseAsync(receiver, registry, socket, timeout).ConfigureAwait(false);
             }
         }
 
@@ -594,7 +594,7 @@ namespace Lextm.SharpSnmpLib.Messaging
         /// <param name="request">The <see cref="ISnmpMessage"/>.</param>
         /// <param name="receiver">Port number.</param>
         /// <returns></returns>
-        public static async Task<ISnmpMessage> GetResponseAsync(this ISnmpMessage request, IPEndPoint receiver)
+        public static async Task<ISnmpMessage> GetResponseAsync(this ISnmpMessage request, IPEndPoint receiver, int timeout = 0)
         {
             if (request == null)
             {
@@ -614,7 +614,7 @@ namespace Lextm.SharpSnmpLib.Messaging
 
             using (var socket = receiver.GetSocket())
             {
-                return await request.GetResponseAsync(receiver, socket).ConfigureAwait(false);
+                return await request.GetResponseAsync(receiver, socket, timeout).ConfigureAwait(false);
             }
         }
 
@@ -625,7 +625,7 @@ namespace Lextm.SharpSnmpLib.Messaging
         /// <param name="receiver">Agent.</param>
         /// <param name="udpSocket">The UDP <see cref="Socket"/> to use to send/receive.</param>
         /// <returns></returns>
-        public static async Task<ISnmpMessage> GetResponseAsync(this ISnmpMessage request, IPEndPoint receiver, Socket udpSocket)
+        public static async Task<ISnmpMessage> GetResponseAsync(this ISnmpMessage request, IPEndPoint receiver, Socket udpSocket, int timeout = 0)
         {
             if (request == null)
             {
@@ -648,7 +648,7 @@ namespace Lextm.SharpSnmpLib.Messaging
                 registry.Add(request.Parameters.UserName, request.Privacy);
             }
 
-            return await request.GetResponseAsync(receiver, registry, udpSocket).ConfigureAwait(false);
+            return await request.GetResponseAsync(receiver, registry, udpSocket, timeout).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -659,7 +659,7 @@ namespace Lextm.SharpSnmpLib.Messaging
         /// <param name="udpSocket">The UDP <see cref="Socket"/> to use to send/receive.</param>
         /// <param name="registry">The user registry.</param>
         /// <returns></returns>
-        public static async Task<ISnmpMessage> GetResponseAsync(this ISnmpMessage request, IPEndPoint receiver, UserRegistry registry, Socket udpSocket)
+        public static async Task<ISnmpMessage> GetResponseAsync(this ISnmpMessage request, IPEndPoint receiver, UserRegistry registry, Socket udpSocket, int timeout = 0)
         {
             if (request == null)
             {
@@ -694,20 +694,41 @@ namespace Lextm.SharpSnmpLib.Messaging
                 await udpSocket.SendToAsync(awaitable1);
             }
 
-            int count;
+            int count = 0;
             var reply = new byte[bufSize];
 
             // IMPORTANT: follow http://blogs.msdn.com/b/pfxteam/archive/2011/12/15/10248293.aspx
             var args = SocketExtension.EventArgsFactory.Create();
             var remoteAddress = udpSocket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any;
             EndPoint remote = new IPEndPoint(remoteAddress, 0);
+            info.SetBuffer(bytes, 0, bytes.Length);
             try
             {
                 args.RemoteEndPoint = remote;
                 args.SetBuffer(reply, 0, bufSize);
-                using (var awaitable = new SocketAwaitable(args))
+                if (timeout == 0)
                 {
-                    count = await udpSocket.ReceiveMessageFromAsync(awaitable);
+                    using (var awaitable = new SocketAwaitable(args))
+                    {
+
+                        count = await udpSocket.ReceiveMessageFromAsync(awaitable);
+                    }
+                }
+                else
+                {
+                    ManualResetEventSlim waitMreSlimAsyncReceive = new ManualResetEventSlim(false);
+                    using (var awaitable = new SocketAwaitable(args, () =>
+                    {
+                        waitMreSlimAsyncReceive.Set();
+                    })
+                    )
+                    {
+                        var socketReceiveTask = udpSocket.ReceiveMessageFromAsync(awaitable);
+                        if (socketReceiveTask.IsCompleted || waitMreSlimAsyncReceive.Wait(timeout))
+                        {
+                            count = socketReceiveTask.GetResult();
+                        }
+                    }
                 }
             }
             catch (SocketException ex)
@@ -744,7 +765,7 @@ namespace Lextm.SharpSnmpLib.Messaging
             throw OperationException.Create(string.Format(CultureInfo.InvariantCulture, "wrong response type: {0}", responseCode), receiver.Address);
         }
 
-#endregion
+        #endregion
 
         /// <summary>
         /// Tests if running on Mono.
