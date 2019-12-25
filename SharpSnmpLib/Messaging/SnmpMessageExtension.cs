@@ -710,7 +710,6 @@ namespace Lextm.SharpSnmpLib.Messaging
                 {
                     using (var awaitable = new SocketAwaitable(args))
                     {
-
                         count = await udpSocket.ReceiveMessageFromAsync(awaitable);
                     }
                 }
@@ -728,6 +727,7 @@ namespace Lextm.SharpSnmpLib.Messaging
                         {
                             count = socketReceiveTask.GetResult();
                         }
+                        udpSocket.Close();
                     }
                 }
             }
